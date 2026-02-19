@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:niu_guardian/config/theme/app_theme.dart';
 import 'package:niu_guardian/core/providers/isar_provider.dart';
 
 import 'config/router/app_router.dart';
@@ -40,10 +41,7 @@ class MainApp extends ConsumerWidget {
       supportedLocales: const [
         Locale('es'),
       ],
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
     );
   }
 }
