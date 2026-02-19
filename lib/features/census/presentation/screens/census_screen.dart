@@ -132,6 +132,16 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
           .expand((f) => f.children.map((c) => c.uniqueCode))
           .toList();
 
+      final dpi = values['documentId'] as String;
+      final duplicateDpi = otherForms.any((f) => f.documentId == dpi);
+      if (duplicateDpi) {
+        final existingParent =
+            otherForms.firstWhere((f) => f.documentId == dpi);
+        FeedbackUtils.showError(context,
+            'El DPI $dpi ya está registrado a nombre de ${existingParent.name} ${existingParent.surname}');
+        return;
+      }
+
       for (final index in _childIndexes) {
         final birthdate = values['child_${index}_birthdate'] as DateTime?;
         final ageString = values['child_${index}_age'] as String?;
