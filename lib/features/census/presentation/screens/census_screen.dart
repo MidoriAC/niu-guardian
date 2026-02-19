@@ -8,6 +8,7 @@ import 'package:niu_guardian/features/census/domain/entities/child_entity.dart';
 import 'package:niu_guardian/features/census/presentation/widgets/child_form_section.dart';
 import 'package:niu_guardian/features/census/presentation/widgets/parent_form_section.dart';
 import 'package:niu_guardian/core/utils/ui_feedback.dart';
+import 'package:niu_guardian/shared/widgets/keep_alive_wrapper.dart';
 
 class CensusScreen extends ConsumerStatefulWidget {
   final String? censusId;
@@ -251,8 +252,27 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
         }
       }
     } else {
-      FeedbackUtils.showInfo(
-          context, 'Por favor corrija los errores en el formulario');
+      final parentFields = [
+        'name',
+        'surname',
+        'email',
+        'phone',
+        'birthdate',
+        'documentId',
+        'gender',
+        'civilStatus',
+        'cityOfResidence'
+      ];
+      final hasParentError = parentFields.any(
+          (field) => _formKey.currentState?.fields[field]?.hasError ?? false);
+
+      if (hasParentError) {
+        FeedbackUtils.showInfo(context,
+            'Por favor complete los datos del Responsable para continuar.');
+      } else {
+        FeedbackUtils.showInfo(
+            context, 'Por favor corrija los errores en el formulario');
+      }
     }
   }
 
@@ -325,67 +345,74 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
                   child: TabBarView(
                     children: [
                       // Tab 1: Responsable
-                      const SingleChildScrollView(
-                        padding: EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            ParentFormSection(),
-                            SizedBox(height: 80),
-                          ],
+                      const KeepAliveWrapper(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              ParentFormSection(),
+                              SizedBox(height: 80),
+                            ],
+                          ),
                         ),
                       ),
                       // Tab 2: Hijos
-                      Stack(
-                        children: [
-                          _childIndexes.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                      KeepAliveWrapper(
+                        child: Stack(
+                          children: [
+                            _childIndexes.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.child_care,
+                                            size: 64, color: Colors.grey[300]),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'No hay hijos registrados',
+                                          style: TextStyle(
+                                              color: Colors.grey[600]),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                            'Use el botón + para agregar'),
+                                      ],
+                                    ),
+                                  )
+                                : ListView(
+                                    padding: const EdgeInsets.all(16),
                                     children: [
-                                      Icon(Icons.child_care,
-                                          size: 64, color: Colors.grey[300]),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No hay hijos registrados',
-                                        style:
-                                            TextStyle(color: Colors.grey[600]),
+                                      ..._childIndexes.map(
+                                        (index) {
+                                          // Usar valores cargados explícitamente desde la base de datos
+                                          // si el índice existe en _loadedChildrenValues
+                                          final childInitials =
+                                              _loadedChildrenValues[index];
+
+                                          return ChildFormSection(
+                                            key: ValueKey(index),
+                                            index: index,
+                                            uniqueCode:
+                                                _childUniqueCodes[index],
+                                            initialValues: childInitials,
+                                            onRemove: () => _removeChild(index),
+                                          );
+                                        },
                                       ),
-                                      const SizedBox(height: 8),
-                                      const Text('Use el botón + para agregar'),
+                                      const SizedBox(height: 80),
                                     ],
                                   ),
-                                )
-                              : ListView(
-                                  padding: const EdgeInsets.all(16),
-                                  children: [
-                                    ..._childIndexes.map(
-                                      (index) {
-                                        // Usar valores cargados explícitamente desde la base de datos
-                                        // si el índice existe en _loadedChildrenValues
-                                        final childInitials =
-                                            _loadedChildrenValues[index];
-
-                                        return ChildFormSection(
-                                          key: ValueKey(index),
-                                          index: index,
-                                          uniqueCode: _childUniqueCodes[index],
-                                          initialValues: childInitials,
-                                          onRemove: () => _removeChild(index),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(height: 80),
-                                  ],
-                                ),
-                          Positioned(
-                            bottom: 16,
-                            right: 16,
-                            child: FloatingActionButton(
-                              onPressed: _addChild,
-                              child: const Icon(Icons.add),
+                            Positioned(
+                              bottom: 16,
+                              right: 16,
+                              child: FloatingActionButton(
+                                onPressed: _addChild,
+                                child: const Icon(Icons.add),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
