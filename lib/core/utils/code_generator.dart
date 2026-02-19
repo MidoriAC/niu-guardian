@@ -7,10 +7,15 @@ class CodeGenerator {
     required DateTime childBirthdate,
     required List<String> existingCodes,
   }) {
+    parentName = parentName.trim().toUpperCase();
+    parentSurname = parentSurname.trim().toUpperCase();
+    childName = childName.trim().toUpperCase();
+    childSurname = childSurname.trim().toUpperCase();
+
     final String month = childBirthdate.month.toString().padLeft(2, '0');
 
-    //? Primero intento para la creación de códigos
-    final codeLevel1 = _buildCode(
+    //! Generar código base
+    String baseCode = _buildCode(
       pName: parentName,
       pSurname: parentSurname,
       cName: childName,
@@ -19,11 +24,10 @@ class CodeGenerator {
       index: 0,
     );
 
-    if (!existingCodes.contains(codeLevel1)) {
-      return codeLevel1;
+    if (!existingCodes.contains(baseCode)) {
+      return baseCode;
     }
 
-    //? Segundo intento para cuando se tiene un código igual entonces usar la segunda letra
     final codeLevel2 = _buildCode(
       pName: parentName,
       pSurname: parentSurname,
@@ -38,7 +42,7 @@ class CodeGenerator {
     }
 
     throw Exception(
-        "Lo sentimos, el código $codeLevel2 ya esta en uso, intente con otro");
+        'El código generado ($codeLevel2) ya está en uso. No es posible guardar este registro.');
   }
 
   static String _buildCode({

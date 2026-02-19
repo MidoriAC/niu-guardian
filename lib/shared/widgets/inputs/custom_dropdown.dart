@@ -7,6 +7,7 @@ class CustomDropdown<T> extends StatelessWidget {
   final List<DropdownMenuItem<T>> items;
   final String? Function(T?)? validator;
   final IconData? prefixIcon;
+  final T? initialValue;
 
   const CustomDropdown({
     super.key,
@@ -15,6 +16,7 @@ class CustomDropdown<T> extends StatelessWidget {
     required this.items,
     this.validator,
     this.prefixIcon,
+    this.initialValue,
   });
 
   @override
@@ -36,6 +38,7 @@ class CustomDropdown<T> extends StatelessWidget {
       ),
       child: FormBuilderDropdown<T>(
         name: name,
+        initialValue: initialValue,
         validator: validator,
         decoration: InputDecoration(
           labelText: label,

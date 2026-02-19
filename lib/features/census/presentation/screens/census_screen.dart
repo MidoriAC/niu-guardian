@@ -20,6 +20,8 @@ class CensusScreen extends ConsumerStatefulWidget {
 class _CensusScreenState extends ConsumerState<CensusScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   final List<int> _childIndexes = [];
+  final Map<int, String> _childUniqueCodes = {};
+  final Map<int, Map<String, dynamic>> _loadedChildrenValues = {};
   int _nextChildIndex = 0;
   bool _isLoading = false;
   int? _editingFormId;
@@ -55,23 +57,23 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
 
         setState(() {
           _childIndexes.clear();
+          _childUniqueCodes.clear();
+          _loadedChildrenValues.clear();
           for (int i = 0; i < form.children.length; i++) {
             _childIndexes.add(i);
+            _childUniqueCodes[i] = form.children[i].uniqueCode;
+
+            final child = form.children[i];
+            _loadedChildrenValues[i] = {
+              'child_${i}_name': child.name,
+              'child_${i}_surname': child.surname,
+              'child_${i}_birthdate': child.birthdate,
+              'child_${i}_age': child.age.toString(),
+              'child_${i}_hairColor': child.hairColor,
+            };
+
             _nextChildIndex = i + 1;
           }
-        });
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final Map<String, dynamic> childrenValues = {};
-          for (int i = 0; i < form.children.length; i++) {
-            final child = form.children[i];
-            childrenValues['child_${i}_name'] = child.name;
-            childrenValues['child_${i}_surname'] = child.surname;
-            childrenValues['child_${i}_birthdate'] = child.birthdate;
-            childrenValues['child_${i}_age'] = child.age.toString();
-            childrenValues['child_${i}_hairColor'] = child.hairColor;
-          }
-          _formKey.currentState?.patchValue(childrenValues);
         });
       });
     }
@@ -88,6 +90,7 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
   void _removeChild(int index) {
     setState(() {
       _childIndexes.remove(index);
+      _childUniqueCodes.remove(index);
     });
     _formKey.currentState?.fields['child_${index}_name']?.didChange(null);
   }
@@ -97,6 +100,15 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
       final values = _formKey.currentState!.value;
 
       final List<ChildEntity> children = [];
+      final allForms = ref.read(censusProvider).forms;
+      final otherForms = _editingFormId == null
+          ? allForms
+          : allForms.where((f) => f.id != _editingFormId).toList();
+
+      final existingCodes = otherForms
+          .expand((f) => f.children.map((c) => c.uniqueCode))
+          .toList();
+
       for (final index in _childIndexes) {
         final birthdate = values['child_${index}_birthdate'] as DateTime?;
         final ageString = values['child_${index}_age'] as String?;
@@ -122,15 +134,6 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
             );
             return;
           }
-
-          final allForms = ref.read(censusProvider).forms;
-          final otherForms = _editingFormId == null
-              ? allForms
-              : allForms.where((f) => f.id != _editingFormId).toList();
-
-          final existingCodes = otherForms
-              .expand((f) => f.children.map((c) => c.uniqueCode))
-              .toList();
 
           try {
             //? Generar identificador único
@@ -165,6 +168,29 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
             return;
           }
         }
+      }
+
+      final generatedCodes = children.map((c) => c.uniqueCode).toList();
+      if (generatedCodes.toSet().length != generatedCodes.length) {
+        final codeCounts = <String, int>{};
+        String? duplicate;
+        for (final code in generatedCodes) {
+          codeCounts[code] = (codeCounts[code] ?? 0) + 1;
+          if (codeCounts[code]! > 1) {
+            duplicate = code;
+            break;
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Error: Se generaron códigos duplicados ($duplicate). Intente guardar nuevamente.'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
       }
 
       final parent = ParentEntity(
@@ -202,6 +228,7 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
             _formKey.currentState?.reset();
             setState(() {
               _childIndexes.clear();
+              _childUniqueCodes.clear();
               _nextChildIndex = 0;
             });
           }
@@ -236,66 +263,122 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
     final censusState = ref.watch(censusProvider);
     final isEditing = _editingFormId != null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Editar Censo' : 'Nuevo Censo'),
-        centerTitle: true,
-      ),
-      body: censusState.isLoading && !isEditing
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: FormBuilder(
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(isEditing ? 'Editar Censo' : 'Nuevo Censo'),
+          centerTitle: true,
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Datos Responsable', icon: Icon(Icons.person)),
+              Tab(text: 'Grupo Familiar', icon: Icon(Icons.people)),
+            ],
+          ),
+        ),
+        body: censusState.isLoading && !isEditing
+            ? const Center(child: CircularProgressIndicator())
+            : FormBuilder(
                 key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                child: TabBarView(
                   children: [
-                    const ParentFormSection(),
-                    const SizedBox(height: 32),
-                    const Text(
-                      'Hijos',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    ..._childIndexes.map((index) => ChildFormSection(
-                          key: ValueKey(index),
-                          index: index,
-                          onRemove: () => _removeChild(index),
-                        )),
-                    OutlinedButton.icon(
-                      onPressed: _addChild,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Agregar Hijo'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                    // Tab 1: Responsable
+                    const SingleChildScrollView(
+                      padding: EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          ParentFormSection(),
+                          SizedBox(height: 80), // Espacio para botones
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    // Tab 2: Hijos
+                    Stack(
+                      children: [
+                        _childIndexes.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.child_care,
+                                        size: 64, color: Colors.grey[300]),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No hay hijos registrados',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text('Use el botón + para agregar'),
+                                  ],
+                                ),
+                              )
+                            : ListView(
+                                padding: const EdgeInsets.all(16),
+                                children: [
+                                  ..._childIndexes.map(
+                                    (index) {
+                                      // Usar valores cargados explícitamente desde la base de datos
+                                      // si el índice existe en _loadedChildrenValues
+                                      final childInitials =
+                                          _loadedChildrenValues[index];
+
+                                      return ChildFormSection(
+                                        key: ValueKey(index),
+                                        index: index,
+                                        uniqueCode: _childUniqueCodes[index],
+                                        initialValues: childInitials,
+                                        onRemove: () => _removeChild(index),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 80),
+                                ],
+                              ),
+                        Positioned(
+                          bottom: 16,
+                          right: 16,
+                          child: FloatingActionButton(
+                            onPressed: _addChild,
+                            child: const Icon(Icons.add),
+                          ),
                         ),
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        textStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      child: Text(isEditing ? 'Actualizar' : 'Guardar'),
+                      ],
                     ),
-                    const SizedBox(height: 32),
                   ],
                 ),
               ),
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: ElevatedButton(
+              onPressed: _submitForm,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              child: Text(isEditing ? 'Actualizar Censo' : 'Guardar Censo'),
             ),
+          ),
+        ),
+      ),
     );
   }
 }
