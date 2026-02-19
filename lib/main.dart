@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:niu_guardian/config/theme/app_theme.dart';
 import 'package:niu_guardian/core/providers/isar_provider.dart';
+import 'package:niu_guardian/features/onboarding/presentation/providers/onboarding_provider.dart';
 
 import 'config/router/app_router.dart';
 
@@ -12,6 +13,7 @@ Future<void> main() async {
 
   final container = ProviderContainer();
   await container.read(isarProvider.future);
+  await container.read(onboardingProvider.notifier).checkOnboardingStatus();
 
   runApp(
     UncontrolledProviderScope(
