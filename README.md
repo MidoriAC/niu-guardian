@@ -67,7 +67,7 @@ Sigue estos pasos para ejecutar el proyecto en tu entorno local:
 
 1.  **Clonar el repositorio:**
     ```bash
-    git clone https://github.com/tu-usuario/niu-guardian.git
+    git clone https://github.com/MidoriAC/niu-guardian.git
     cd niu-guardian
     ```
 
