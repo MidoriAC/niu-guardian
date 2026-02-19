@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:niu_guardian/features/census/domain/entities/child_entity.dart';
 import 'package:niu_guardian/features/census/domain/entities/parent_entity.dart';
 import 'package:niu_guardian/features/census/presentation/providers/census_provider.dart';
+import 'package:niu_guardian/core/utils/snackbar_utils.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -143,9 +144,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: const Text("Confirmar"),
+                  title: const Text("Eliminar Responsable"),
                   content: const Text(
-                      "¿Estás seguro de que deseas eliminar este registro?"),
+                      "Esta acción eliminará al responsable y todos sus hijos asociados.\n\n¿Estás seguro de continuar?"),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
@@ -164,11 +165,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onDismissed: (direction) {
             if (form.id != null) {
               ref.read(censusProvider.notifier).deleteForm(form.id!);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Registro eliminado')),
-                );
-              }
+              CustomSnackBar.showSuccess(
+                  context, 'Registro eliminado correctamente');
             }
           },
           background: Container(
