@@ -56,7 +56,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 decoration: InputDecoration(
                   hintText: _currentIndex == 0
                       ? 'Buscar por nombre o DPI...'
-                      : 'Buscar por nombre o CUI...',
+                      : 'Buscar por nombre o COD...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -131,7 +131,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
       itemCount: filteredForms.length,
       itemBuilder: (context, index) {
         final form = filteredForms[index];
@@ -233,7 +233,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
       itemCount: filteredChildren.length,
       itemBuilder: (context, index) {
         final item = filteredChildren[index];
