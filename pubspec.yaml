@@ -39,10 +39,18 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^5.0.0
+  flutter_native_splash: ^2.4.0
 
   # Generación de Código (Necesario para Isar)
   build_runner: ^2.4.8
   isar_generator: ^3.1.0+1
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/logo/niu_square.png
+  android_12:
+    image: assets/logo/niu_square.png
+    color: "#FFFFFF"
 
 flutter:
   uses-material-design: true
