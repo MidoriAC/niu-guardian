@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:niu_guardian/shared/widgets/inputs/custom_autocomplete.dart';
 import '../../../../shared/widgets/inputs/custom_text_field.dart';
 import '../../../../shared/widgets/inputs/custom_date_picker.dart';
 import '../../../../shared/widgets/inputs/custom_dropdown.dart';
@@ -137,12 +138,23 @@ class ParentFormSection extends StatelessWidget {
           subtitle: 'Seleccione si trabaja actualmente',
         ),
 
-        CustomTextField(
+        CustomAutocomplete(
           name: 'cityOfResidence',
-          label: 'Ciudad de Residencia',
+          label: 'Ciudad de Residencia *',
           prefixIcon: Icons.location_city,
+          validator: FormBuilderValidators.required(
+              errorText: 'Este campo es obligatorio'),
+          options: const [
+            'Ciudad de Guatemala',
+            'Mixco',
+            'Villa Nueva',
+            'Quetzaltenango',
+            'Huehuetenango',
+            'Santa Cruz del Quiché',
+            'Cobán',
+            'Antigua Guatemala',
+          ],
         ),
-
         // 6. Textarea
         CustomTextField(
           maxLines: 3,
