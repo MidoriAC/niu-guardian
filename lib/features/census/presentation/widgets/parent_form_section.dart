@@ -57,9 +57,9 @@ class ParentFormSection extends StatelessWidget {
           validator: FormBuilderValidators.compose([
             FormBuilderValidators.required(
                 errorText: 'Este campo es obligatorio'),
-            FormBuilderValidators.minLength(8,
-                errorText: 'Mínimo 8 caracteres'),
             FormBuilderValidators.numeric(errorText: 'Solo números'),
+            FormBuilderValidators.equalLength(8,
+                errorText: 'Debe tener exactamente 8 dígitos'),
           ]),
         ),
         CustomDatePicker(
@@ -73,10 +73,16 @@ class ParentFormSection extends StatelessWidget {
         ),
         CustomTextField(
           name: 'documentId',
-          label: 'Documento de Identificación *',
+          label: 'Documento de Identificación (DPI) *',
           prefixIcon: Icons.badge,
-          validator: FormBuilderValidators.required(
-              errorText: 'Este campo es obligatorio'),
+          keyboardType: TextInputType.number,
+          validator: FormBuilderValidators.compose([
+            FormBuilderValidators.required(
+                errorText: 'Este campo es obligatorio'),
+            FormBuilderValidators.numeric(errorText: 'Solo números'),
+            FormBuilderValidators.equalLength(13,
+                errorText: 'Debe tener exactamente 13 dígitos'),
+          ]),
         ),
 
         const Divider(height: 32),
