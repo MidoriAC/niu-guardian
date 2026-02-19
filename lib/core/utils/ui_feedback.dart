@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CustomSnackBar {
+class FeedbackUtils {
   static void showSuccess(BuildContext context, String message) {
     _show(context, message, Colors.green.shade600, Icons.check_circle_outline);
   }

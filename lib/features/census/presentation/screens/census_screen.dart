@@ -7,7 +7,7 @@ import 'package:niu_guardian/core/utils/code_generator.dart';
 import 'package:niu_guardian/features/census/domain/entities/child_entity.dart';
 import 'package:niu_guardian/features/census/presentation/widgets/child_form_section.dart';
 import 'package:niu_guardian/features/census/presentation/widgets/parent_form_section.dart';
-import 'package:niu_guardian/core/utils/snackbar_utils.dart';
+import 'package:niu_guardian/core/utils/ui_feedback.dart';
 
 class CensusScreen extends ConsumerStatefulWidget {
   final String? censusId;
@@ -148,7 +148,7 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
                   : 0);
 
           if (calculatedAge != age) {
-            CustomSnackBar.showInfo(context,
+            FeedbackUtils.showInfo(context,
                 'La edad del Hijo #${index + 1} no coincide con su fecha de nacimiento.');
             return;
           }
@@ -176,7 +176,7 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
               uniqueCode: uniqueCode,
             ));
           } catch (e) {
-            CustomSnackBar.showError(
+            FeedbackUtils.showError(
                 context, 'Error al generar código para hijo #${index + 1}: $e');
             return;
           }
@@ -195,7 +195,7 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
           }
         }
 
-        CustomSnackBar.showError(context,
+        FeedbackUtils.showError(context,
             'Error: Se generaron códigos duplicados ($duplicate). Intente guardar nuevamente.');
         return;
       }
@@ -221,7 +221,7 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
 
       if (mounted) {
         if (success) {
-          CustomSnackBar.showSuccess(
+          FeedbackUtils.showSuccess(
               context, 'Formulario guardado exitosamente');
           if (_editingFormId != null) {
             // Si es edición, volver atrás
@@ -237,11 +237,11 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
           }
         } else {
           final error = ref.read(censusProvider).errorMessage;
-          CustomSnackBar.showError(context, error ?? 'Error al guardar');
+          FeedbackUtils.showError(context, error ?? 'Error al guardar');
         }
       }
     } else {
-      CustomSnackBar.showInfo(
+      FeedbackUtils.showInfo(
           context, 'Por favor corrija los errores en el formulario');
     }
   }

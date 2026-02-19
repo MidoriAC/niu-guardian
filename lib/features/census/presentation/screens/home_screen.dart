@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:niu_guardian/features/census/domain/entities/child_entity.dart';
 import 'package:niu_guardian/features/census/domain/entities/parent_entity.dart';
 import 'package:niu_guardian/features/census/presentation/providers/census_provider.dart';
-import 'package:niu_guardian/core/utils/snackbar_utils.dart';
+import 'package:niu_guardian/core/utils/ui_feedback.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -165,7 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onDismissed: (direction) {
             if (form.id != null) {
               ref.read(censusProvider.notifier).deleteForm(form.id!);
-              CustomSnackBar.showSuccess(
+              FeedbackUtils.showSuccess(
                   context, 'Registro eliminado correctamente');
             }
           },
