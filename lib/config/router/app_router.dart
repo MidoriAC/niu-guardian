@@ -14,9 +14,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
-        path: '/create',
-        name: 'create_census',
-        builder: (context, state) => const CensusScreen(),
+        path: '/census/:id',
+        name: 'census',
+        builder: (context, state) {
+          final censusId = state.pathParameters['id'];
+          return CensusScreen(censusId: censusId);
+        },
       ),
     ],
   );

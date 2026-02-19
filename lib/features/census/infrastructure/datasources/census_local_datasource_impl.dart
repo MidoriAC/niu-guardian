@@ -25,6 +25,13 @@ class CensusLocalDatasourceImpl implements CensusDatasource {
   }
 
   @override
+  Future<ParentEntity?> getFormById(int id) async {
+    final model = await isar.parentModels.get(id);
+    if (model == null) return null;
+    return CensusMapper.parentToEntity(model);
+  }
+
+  @override
   Future<void> deleteForm(int id) async {
     await isar.writeTxn(() async {
       await isar.parentModels.delete(id);

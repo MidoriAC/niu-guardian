@@ -9,7 +9,9 @@ import 'package:niu_guardian/features/census/presentation/widgets/child_form_sec
 import 'package:niu_guardian/features/census/presentation/widgets/parent_form_section.dart';
 
 class CensusScreen extends ConsumerStatefulWidget {
-  const CensusScreen({super.key});
+  final String? censusId;
+
+  const CensusScreen({super.key, this.censusId});
 
   @override
   ConsumerState<CensusScreen> createState() => _CensusScreenState();
@@ -19,6 +21,62 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   final List<int> _childIndexes = [];
   int _nextChildIndex = 0;
+  bool _isLoading = false;
+  int? _editingFormId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.censusId != null && widget.censusId != 'new') {
+      _loadForm(int.parse(widget.censusId!));
+    }
+  }
+
+  Future<void> _loadForm(int id) async {
+    setState(() => _isLoading = true);
+    final form = await ref.read(censusProvider.notifier).getFormById(id);
+    if (form != null) {
+      _editingFormId = form.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _formKey.currentState?.patchValue({
+          'name': form.name,
+          'surname': form.surname,
+          'email': form.email,
+          'phone': form.phone,
+          'birthdate': form.birthdate,
+          'documentId': form.documentId,
+          'civilStatus': form.civilStatus,
+          'gender': form.gender,
+          'hasHealthInsurance': form.hasHealthInsurance,
+          'isEmployed': form.isEmployed,
+          'cityOfResidence': form.cityOfResidence,
+          'notes': form.notes,
+        });
+
+        setState(() {
+          _childIndexes.clear();
+          for (int i = 0; i < form.children.length; i++) {
+            _childIndexes.add(i);
+            _nextChildIndex = i + 1;
+          }
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final Map<String, dynamic> childrenValues = {};
+          for (int i = 0; i < form.children.length; i++) {
+            final child = form.children[i];
+            childrenValues['child_${i}_name'] = child.name;
+            childrenValues['child_${i}_surname'] = child.surname;
+            childrenValues['child_${i}_birthdate'] = child.birthdate;
+            childrenValues['child_${i}_age'] = child.age.toString();
+            childrenValues['child_${i}_hairColor'] = child.hairColor;
+          }
+          _formKey.currentState?.patchValue(childrenValues);
+        });
+      });
+    }
+    setState(() => _isLoading = false);
+  }
 
   void _addChild() {
     setState(() {
@@ -31,6 +89,7 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
     setState(() {
       _childIndexes.remove(index);
     });
+    _formKey.currentState?.fields['child_${index}_name']?.didChange(null);
   }
 
   Future<void> _submitForm() async {
@@ -61,17 +120,21 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
                 backgroundColor: Colors.orange,
               ),
             );
-            return; // Detener guardado
+            return;
           }
 
-          final existingCodes = ref
-              .read(censusProvider)
-              .forms
+          final allForms = ref.read(censusProvider).forms;
+          final otherForms = _editingFormId == null
+              ? allForms
+              : allForms.where((f) => f.id != _editingFormId).toList();
+
+          final existingCodes = otherForms
               .expand((f) => f.children.map((c) => c.uniqueCode))
               .toList();
 
           try {
-            // Generar identificador único
+            //? Generar identificador único
+
             final uniqueCode = CodeGenerator.generate(
               parentName: values['name'],
               parentSurname: values['surname'],
@@ -81,7 +144,6 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
               existingCodes: existingCodes,
             );
 
-            // Agregar a la lista temporal de excluidos para el siguiente hijo del loop
             existingCodes.add(uniqueCode);
 
             children.add(ChildEntity(
@@ -100,12 +162,13 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
                 backgroundColor: Colors.red,
               ),
             );
-            return; // Detener guardado
+            return;
           }
         }
       }
 
       final parent = ParentEntity(
+        id: _editingFormId,
         name: values['name'],
         surname: values['surname'],
         email: values['email'],
@@ -114,8 +177,8 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
         documentId: values['documentId'],
         civilStatus: values['civilStatus'] ?? 'otro',
         gender: values['gender'] ?? 'O',
-        hasHealthInsurance: values['hasHealthInsurance'] ?? false,
-        isEmployed: values['isEmployed'] ?? false,
+        hasHealthInsurance: values['hasHealthInsurance'],
+        isEmployed: values['isEmployed'],
         cityOfResidence: values['cityOfResidence'] ?? '',
         notes: values['notes'] ?? '',
         children: children,
@@ -131,11 +194,17 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          _formKey.currentState?.reset();
-          setState(() {
-            _childIndexes.clear();
-            _nextChildIndex = 0;
-          });
+          if (_editingFormId != null) {
+            // Si es edición, volver atrás
+            Navigator.of(context).pop();
+          } else {
+            // Si es nuevo, limpiar
+            _formKey.currentState?.reset();
+            setState(() {
+              _childIndexes.clear();
+              _nextChildIndex = 0;
+            });
+          }
         } else {
           final error = ref.read(censusProvider).errorMessage;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -158,14 +227,21 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final censusState = ref.watch(censusProvider);
+    final isEditing = _editingFormId != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NIU Guardian - Censo'),
+        title: Text(isEditing ? 'Editar Censo' : 'Nuevo Censo'),
         centerTitle: true,
       ),
-      body: censusState.isLoading
+      body: censusState.isLoading && !isEditing
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
@@ -213,7 +289,7 @@ class _CensusScreenState extends ConsumerState<CensusScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      child: const Text('Guardar'),
+                      child: Text(isEditing ? 'Actualizar' : 'Guardar'),
                     ),
                     const SizedBox(height: 32),
                   ],

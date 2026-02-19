@@ -167,8 +167,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           trailing: const Icon(Icons.arrow_forward_ios,
                               size: 16, color: Colors.grey),
                           onTap: () {
-                            // Navegar a detalle o edición (Futuro)
-                            // context.go('/edit/${form.id}');
+                            // Navegar a edición
+                            context.push('/census/${form.id}');
                           },
                         ),
                       ),
@@ -177,7 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          context.push('/create');
+          context.push('/census/new');
         },
         label: const Text('Nuevo Registro'),
         icon: const Icon(Icons.add),

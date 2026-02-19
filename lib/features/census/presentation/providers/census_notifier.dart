@@ -21,6 +21,15 @@ class CensusNotifier extends StateNotifier<CensusState> {
     }
   }
 
+  Future<ParentEntity?> getFormById(int id) async {
+    try {
+      return await repository.getFormById(id);
+    } catch (e) {
+      state = state.copyWith(errorMessage: "Error al cargar registro: $e");
+      return null;
+    }
+  }
+
   Future<bool> saveForm(ParentEntity parent) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {

@@ -18,6 +18,11 @@ class CensusRepositoryImpl implements CensusRepository {
   }
 
   @override
+  Future<ParentEntity?> getFormById(int id) {
+    return datasource.getFormById(id);
+  }
+
+  @override
   Future<void> deleteForm(int id) {
     return datasource.deleteForm(id);
   }
